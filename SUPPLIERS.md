@@ -1,6 +1,6 @@
 # Independent supplier integration
 
-An operator can run its own seller node or use an HTTP bridge to a backend in any language. The Hub does not need registrar credentials or private buyer data. The first built-in registrar is Openprovider; adding others does not change the public `domains.*@v1` contract.
+An operator can run its own seller node or use an HTTP bridge to a backend in any language. The Hub does not need registrar credentials or private buyer data. Built-in registrars are Openprovider and [Porkbun Sandbox](PORKBUN.md); adding others does not change the public `domains.*@v1` contract.
 
 ## HTTP authentication
 
@@ -91,3 +91,7 @@ Implemented against the [published REST specification](https://developer.openpro
 The adapter uses contact handles belonging to the supplied registrant, standard Openprovider DNS, explicit autorenew off, and disabled paid extras. Registration reconciliation matches both its unique order comment and owner handle. Renewal reconciliation needs its durable acknowledged response or manually recorded registrar evidence plus matching ownership and increased expiry. The API does not provide an application idempotency key or an atomic normal-price ceiling here, so the kit never guesses either guarantee.
 
 DNS names are normalized to FQDNs on read and relative labels on writes. Simple single-string TXT quotes are normalized; escaped or multi-string forms are preserved. Unchanged records are skipped and changed RRsets use add/remove/update deltas according to the [zone modification guide](https://support.openprovider.eu/hc/en-us/articles/360024342733-3-Zones-API-How-to-modify-a-zone). TTLs are constrained to that guide's supported values. The internal Sandbox pilot verified creation and modification of the test zone, relative/FQDN mapping, and preservation of an unrelated TXT record. New operators should repeat the pilot against their own account.
+
+## Porkbun Sandbox adapter
+
+Set `DOMAIN_PROVIDER=porkbun`, `DOMAIN_MODE=sandbox`, `PORKBUN_API_KEY_FILE` and `PORKBUN_SECRET_KEY_FILE`. See [setup, recovery and production gates](PORKBUN.md). Uses the same public capabilities with no buyer changes; transfer-code is not advertised. Unlike the HTTP bridge and Openprovider, Porkbun recovery may replay a persisted idempotent write within a 23-hour window. It never invents a new key for an ambiguous purchase.

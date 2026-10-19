@@ -57,6 +57,26 @@ Repeated runs exposed intermittent Sandbox timeouts and an HTTP 400 / API code 1
 
 The pilot retains its domain, encrypted order database and private keys locally under ignored `data/sandbox-pilot/`. Credentials remain outside the repository. No real domain purchase, on-chain payment, production registrar request, Vercel change or push was performed. Registration/renewal in the pilot use the signed HTTP client; the MCP check is automated transport validation, not an interactive Codex/Cursor session.
 
+## Completed Porkbun Sandbox pilot — 2026-10-19
+
+Second built-in registrar, using the same public capabilities. The official disposable sandbox keypair was obtained without a user-account approval flow; `/ping` confirmed `sandbox: true`. Credentials remain outside the repository in private files. The bootstrap script is also tested against controlled responses for sandbox-only behavior, permissions, no secret output and refusal to overwrite keys.
+
+`npm run sandbox:porkbun` passed against the real Porkbun sandbox API with fictional contacts and simulated buyer payments. A repeated process run retained the same domain and purchase orders:
+
+| Check | Evidence |
+|---|---|
+| Registration | One distinct Porkbun order receipt; active domain, buyer contact read back, auto-renew `0` |
+| Lost registration response | Successful response discarded; service/SQLite reopened; same persisted idempotency key recovered the original receipt |
+| Renewal | One distinct renewal receipt; expiry advanced exactly one year; lost response recovered after restart with no extra purchase |
+| DNS | A/TXT read/write, unrelated TXT preserved, unchanged write skipped; lost create response recovered after restart with no duplicate record |
+| Owner isolation | Unrelated buyer signing key rejected; registrar contact verified on management reads |
+| MCP | Real stdio subprocess read status, info and DNS |
+| Price | Observed `.com` supplier cost $11.08 + fixed $2 markup = $13.08; renewal also $13.08 in this test account |
+
+The standard `configuredService` path also authenticated and quoted `.net` ($12.52 supplier cost) and `.org` ($11.84 supplier cost) without purchases. These prices are observations, not a future price promise. The sandbox permitted immediate renewal; production documentation's 30-day restriction remains a launch gate. Transient HTTP 503s occurred during reads; reads retry once, while mutations use durable reconciliation. Tests cover missing sandbox markers, wrong/live keys, premium/unknown status, unsupported terms, exact cents, changed request bodies, preview responses, mismatched purchase receipts, account changes, contact ownership, the 23-hour replay cutoff and interrupted DNS plans.
+
+Final local checks: `npm run check`, **57 tests passed (0 failed, 0 skipped)** and `npm run demo`. State remains under ignored `data/porkbun-pilot/`. Porkbun production mode is explicitly blocked in this adapter pending production validation. No real payment, registered public domain, public DNS change, Vercel change or push occurred. Setup and limitations: [PORKBUN.md](PORKBUN.md).
+
 ## What was exercised
 
 * Fixed markup with integer money arithmetic, invalid domains/TLDs, unavailable/premium domains, quote expiry and supplier repricing before settlement.
@@ -82,3 +102,15 @@ These are launch gates in [OPERATIONS.md](OPERATIONS.md), not claims inferred fr
 ## Provenance
 
 The read-only Base reconciliation implementation and its six regression tests were adapted from the eSIM operator kit before this repository was extracted. The MIT license is retained in [LICENSE](LICENSE); source attribution is in [NOTICE.md](NOTICE.md). Registrar and Vercel source references are linked in [SUPPLIERS.md](SUPPLIERS.md) and [OPERATIONS.md](OPERATIONS.md).
+
+## Canonical monorepo migration — 2026-10-19
+
+The Porkbun implementation from standalone commit `b4e18de` was transferred to the canonical `aicom/domain-kit/` directory, preserving the monorepo's satellite URL and packaging metadata. `npm run check --prefix domain-kit`, all **57 tests**, `npm run demo --prefix domain-kit` and the retained-state `npm run sandbox:porkbun --prefix domain-kit` passed from the monorepo. The first restricted test run could not bind localhost (`EPERM`); the complete suite passed when localhost was allowed.
+
+Private pilot state was copied into the ignored `domain-kit/data/` directory; credentials remain outside the repository. The sandbox rerun recovered the existing domain and receipts, confirmed DNS/owner/autorenew and MCP reads, and created no additional purchase. The user subsequently deleted the sibling standalone checkout; its absence was verified. Use only `aicom/domain-kit/` for further development and pilots. This location is recorded in `AGENTS.md`. Nothing was pushed.
+
+## Recheck after deletion of standalone checkout — 2026-10-19
+
+Verified that the former sibling directory no longer exists. All 17 migrated files were checked against the retained original migration patch: implementation, scripts, tests and unchanged documentation match their original blob hashes; README/package metadata and this validation record retain intentional monorepo changes. The complete migration patch also passed a reverse-apply check without modifying files. All three copied private state directories are present; external credential files remain mode `0600`.
+
+Fresh runs from `aicom/`: syntax/schema/lock check passed, **57 tests passed (0 failed, 0 skipped)**, demo passed, and **both Porkbun and Openprovider Sandbox pilots passed**. Each reused its original domain and registration/renewal orders, verified owner isolation, DNS, auto-renew disabled, restart behavior and real MCP reads. Openprovider still recorded one registration submission and one renewal submission; Porkbun still recorded one distinct receipt per purchase. No production purchase, real payment or push occurred. The working-location note is retained in [AGENTS.md](AGENTS.md).

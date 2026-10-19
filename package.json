@@ -21,7 +21,9 @@
     "test": "node --test test/*.test.js",
     "check": "node scripts/check.mjs",
     "demo": "node scripts/demo.mjs",
-    "sandbox:pilot": "node scripts/sandbox-pilot.mjs"
+    "sandbox:pilot": "node scripts/sandbox-pilot.mjs",
+    "sandbox:porkbun": "node scripts/porkbun-pilot.mjs",
+    "sandbox:porkbun:init": "node scripts/porkbun-sandbox.mjs"
   },
   "dependencies": {
     "@coinbase/cdp-sdk": "1.57.1",

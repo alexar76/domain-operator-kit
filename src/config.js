@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { Store } from './store.js';
 import { signer, secureUrl } from './core.js';
 import { demoProvider, httpProvider, openprovider } from './providers.js';
+import { porkbun } from './porkbun.js';
 import { cdpPayments, demoPayments } from './payments.js';
 import { DomainService } from './service.js';
 
@@ -29,6 +30,8 @@ export async function configuredService(env = process.env) {
     else if (kind === 'openprovider') {
       if (tlds.some(t => !['com', 'net', 'org'].includes(t))) throw Error('Openprovider v1 supports com/net/org only; additional TLD policies need an adapter extension');
       provider = openprovider({ username: secretFile(env.OPENPROVIDER_USERNAME_FILE), password: secretFile(env.OPENPROVIDER_PASSWORD_FILE), sandbox: mode !== 'live', tlds, store });
+    } else if (kind === 'porkbun') {
+      provider = porkbun({ apiKey: secretFile(env.PORKBUN_API_KEY_FILE), secretKey: secretFile(env.PORKBUN_SECRET_KEY_FILE), sandbox: mode !== 'live', tlds, store });
     } else if (kind === 'http') provider = httpProvider({ url: env.DOMAIN_SUPPLIER_URL, secret: secretFile(env.DOMAIN_SUPPLIER_SECRET_FILE), tlds, sandbox: mode !== 'live',
       features: (env.DOMAIN_SUPPLIER_FEATURES || 'register,renew,info').split(','), allowLocal: mode !== 'live' });
     else throw Error('unknown DOMAIN_PROVIDER');

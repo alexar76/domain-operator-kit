@@ -1,0 +1,295 @@
+[
+  {
+    "key": "quote",
+    "path": "/quote",
+    "public": true,
+    "description": "Quote a one-year domain registration or renewal. Renewal requires the owner signature. Availability is not a reservation.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "description": "Exact registrable ASCII domain, e.g. example.com"
+        },
+        "operation": {
+          "enum": [
+            "register",
+            "renew"
+          ],
+          "default": "register"
+        },
+        "period_years": {
+          "const": 1
+        }
+      },
+      "required": [
+        "domain"
+      ]
+    },
+    "capability_id": "domains.quote@v1"
+  },
+  {
+    "key": "register",
+    "path": "/register",
+    "description": "Buy the exact domain in an unexpired quote, registered to the supplied registrant. Irreversible after registration. Separate x402 payment required.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quote_id": {
+          "type": "string"
+        },
+        "client_order_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 80
+        },
+        "accept_terms": {
+          "const": true
+        },
+        "terms_version": {
+          "type": "string"
+        },
+        "registrant": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "first_name": {
+              "type": "string"
+            },
+            "last_name": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "phone_country": {
+              "type": "string"
+            },
+            "phone_area": {
+              "type": "string"
+            },
+            "phone_number": {
+              "type": "string"
+            },
+            "street": {
+              "type": "string"
+            },
+            "number": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "postal_code": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "first_name",
+            "last_name",
+            "email",
+            "phone_country",
+            "phone_number",
+            "street",
+            "number",
+            "city",
+            "postal_code",
+            "country"
+          ]
+        }
+      },
+      "required": [
+        "quote_id",
+        "client_order_id",
+        "accept_terms",
+        "terms_version",
+        "registrant"
+      ]
+    },
+    "capability_id": "domains.register@v1"
+  },
+  {
+    "key": "renew",
+    "path": "/renew",
+    "description": "Renew an owned domain for one year using a renewal quote. Separate payment; automatic registrar renewal is disabled.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quote_id": {
+          "type": "string"
+        },
+        "client_order_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 80
+        },
+        "accept_terms": {
+          "const": true
+        },
+        "terms_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "quote_id",
+        "client_order_id",
+        "accept_terms",
+        "terms_version"
+      ]
+    },
+    "capability_id": "domains.renew@v1"
+  },
+  {
+    "key": "status",
+    "path": "/status",
+    "description": "Recover a private order after a lost response. Pending is not failure; never buy again to resolve a timeout.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id"
+      ]
+    },
+    "capability_id": "domains.order.status@v1"
+  },
+  {
+    "key": "info",
+    "path": "/info",
+    "description": "Read an owned domain, expiry, nameservers and verification requirements.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "domain"
+      ]
+    },
+    "capability_id": "domains.info@v1"
+  },
+  {
+    "key": "dnsGet",
+    "path": "/dns/get",
+    "feature": "dns",
+    "description": "Read owned DNS records and their revision before an update.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "domain"
+      ]
+    },
+    "capability_id": "domains.dns.get@v1"
+  },
+  {
+    "key": "dnsSet",
+    "path": "/dns/set",
+    "feature": "dns",
+    "description": "Replace only named DNS record sets, preserving other names and types. Requires the current DNS revision.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "A",
+                  "AAAA",
+                  "CNAME",
+                  "TXT",
+                  "MX",
+                  "CAA"
+                ]
+              },
+              "value": {
+                "type": "string"
+              },
+              "ttl": {
+                "type": "integer",
+                "minimum": 60,
+                "maximum": 86400
+              },
+              "prio": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "value",
+              "ttl"
+            ]
+          }
+        }
+      },
+      "required": [
+        "domain",
+        "revision",
+        "records"
+      ]
+    },
+    "capability_id": "domains.dns.set@v1"
+  },
+  {
+    "key": "transferCode",
+    "path": "/transfer-code",
+    "feature": "transfer_code",
+    "description": "Retrieve the secret transfer code of an owned domain. Registrar locks still apply. Do not publish this result.",
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "domain"
+      ]
+    },
+    "capability_id": "domains.transfer.code@v1"
+  }
+]

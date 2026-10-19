@@ -1,0 +1,19 @@
+services:
+  domains:
+    build: .
+    init: true
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      DOMAIN_DATA_DIR: /app/data
+    ports:
+      - "127.0.0.1:9495:9495"
+    volumes:
+      - domains-data:/app/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 120s
+volumes:
+  domains-data:

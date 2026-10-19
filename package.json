@@ -1,0 +1,49 @@
+{
+  "name": "@aimarket/domain-operator-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent domain sellers for AI agents: signed capabilities, fixed markup, durable orders and pluggable registrars.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./vercel": "./src/vercel.js"
+  },
+  "bin": {
+    "domain-rails": "./bin/domain-rails.mjs"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/check.mjs",
+    "demo": "node scripts/demo.mjs",
+    "sandbox:pilot": "node scripts/sandbox-pilot.mjs"
+  },
+  "dependencies": {
+    "@coinbase/cdp-sdk": "1.57.1",
+    "@x402/core": "2.28.0",
+    "@x402/evm": "2.28.0",
+    "viem": "2.57.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexar76/domain-operator-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexar76/domain-operator-kit/issues"
+  },
+  "keywords": [
+    "domains",
+    "ai-agents",
+    "mcp",
+    "x402",
+    "dns",
+    "vercel",
+    "openprovider",
+    "aimarket"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "domains": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/domain-kit/bin/domain-rails.mjs", "mcp"],
+      "env": {
+        "DOMAIN_SELLER_URL": "https://domains.seller.example",
+        "DOMAIN_SELLER_KEY": "PINNED_BASE64_ED25519_PUBLIC_KEY",
+        "DOMAIN_SELLER_PRODUCT": "domains-operator",
+        "DOMAIN_OWNER_KEY_FILE": "/PRIVATE/PATH/owner.pem",
+        "DOMAIN_REGISTRANT_FILE": "/PRIVATE/PATH/registrant.json",
+        "DOMAIN_BUYER_DATA_DIR": "/PRIVATE/PATH/domain-buyer-ledger",
+        "DOMAIN_BUYER_KEY_FILE": "/PRIVATE/PATH/buyer-base-wallet.key",
+        "DOMAIN_BUY_MAX_USD": "25.00",
+        "DOMAIN_BUY_DAILY_USD": "50.00"
+      }
+    }
+  }
+}

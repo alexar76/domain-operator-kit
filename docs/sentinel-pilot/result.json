@@ -1,0 +1,43 @@
+{
+  "tested_at_utc": "2026-10-20T14:33:29.060Z",
+  "timezone": "Europe/Moscow",
+  "domain": "sentinelproof.click",
+  "deployment_id": "dpl_H8EfoNRLGryJ9FW6RTQjmzCfZEXE",
+  "registration_usd": 1.54,
+  "balance_remaining_usd": 8.46,
+  "renewal_quote_usd": "10.81",
+  "autorenew": false,
+  "domain_verified": true,
+  "dns_configured": true,
+  "https_status": 200,
+  "api_health": {
+    "status": "ok",
+    "service": "Sentinel Verified Safety Companion",
+    "database": "ok",
+    "hub": "https://modelmarket.dev"
+  },
+  "repeat_charge_usd": 0.0,
+  "purchase_receipt_reused": true,
+  "tests": {
+    "passed": 66,
+    "failed": 0
+  },
+  "github_writes": 0,
+  "infrastructure_test": "passed",
+  "application_report": {
+    "status": "UNKNOWN",
+    "reason": "ATLAS atlas.situation.brief@v1 requires paid access; observed on both the original Vercel URL and sentinelproof.click. No additional ATLAS payment performed."
+  },
+  "scope": "Redeployment of existing factory-built Sentinel and owner-account registration; not a fresh application build or live reseller service.",
+  "browser": {
+    "url": "https://sentinelproof.click/",
+    "page_loaded": true,
+    "report_completed": true,
+    "report_status": "UNKNOWN",
+    "screenshot": "sentinel-live.jpg"
+  },
+  "certificate": {
+    "issued": true,
+    "expires_at_unix_ms": 1800279139000
+  }
+}

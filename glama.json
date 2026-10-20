@@ -1,0 +1,9 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["alexar76"],
+  "name": "domain-operator-kit",
+  "description": "Independent domain sellers for AI agents: signed capabilities, fixed markup, durable orders and pluggable registrars. Stdio MCP client. No secrets required to list tools.",
+  "repository": "https://github.com/alexar76/domain-operator-kit",
+  "dockerfile": "Dockerfile.glama",
+  "command": ["node", "bin/domain-rails.mjs", "mcp"]
+}

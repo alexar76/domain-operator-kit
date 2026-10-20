@@ -12,11 +12,14 @@ import { VercelConnector } from '../src/vercel.js';
 const [command, ...args] = process.argv.slice(2);
 async function clientFromEnv() {
   const env = process.env;
+  if (!env.DOMAIN_OWNER_KEY_FILE) throw Object.assign(Error('DOMAIN_OWNER_KEY_FILE is not set'), { code: 'owner_key_required' });
+  if (!env.DOMAIN_SELLER_URL || !env.DOMAIN_SELLER_KEY || !env.DOMAIN_SELLER_PRODUCT) throw Object.assign(Error('Seller URL, pinned key and product are not set'), { code: 'seller_not_configured' });
+  const ownerPem = readFileSync(env.DOMAIN_OWNER_KEY_FILE, 'utf8');
   const dir = resolve(env.DOMAIN_BUYER_DATA_DIR || './data/buyer'); mkdirSync(dir, { recursive: true, mode: 0o700 });
   const path = join(dir, 'encryption.key');
   if (!existsSync(path)) writeFileSync(path, randomBytes(32).toString('hex'), { mode: 0o600, flag: 'wx' });
   const store = new Store(join(dir, 'buyer.sqlite'), Buffer.from(readFileSync(path, 'utf8').trim(), 'hex'));
-  const key = signer(readFileSync(env.DOMAIN_OWNER_KEY_FILE, 'utf8'));
+  const key = signer(ownerPem);
   const paymentSigner = env.DOMAIN_BUYER_KEY_FILE ? await x402PaymentSigner(readFileSync(env.DOMAIN_BUYER_KEY_FILE, 'utf8').trim(), env.DOMAIN_BUY_MAX_USD || '0') : null;
   return new DomainClient({ url: env.DOMAIN_SELLER_URL, sellerKey: env.DOMAIN_SELLER_KEY, productId: env.DOMAIN_SELLER_PRODUCT,
     ownerKey: key, paymentSigner, store, maxPurchaseUsd: env.DOMAIN_BUY_MAX_USD || '0', dailyBudgetUsd: env.DOMAIN_BUY_DAILY_USD || '0',
@@ -55,7 +58,10 @@ async function main() {
     return;
   }
   if (command === 'mcp') {
-    const c = await clientFromEnv();
+    // initialize and tools/list do not open the buyer ledger. A missing seller or owner
+    // key fails the tool call, so a directory probe can list tools with no secrets.
+    let client;
+    const buyer = async () => { if (!client) client = await clientFromEnv(); return client; };
     // newline-delimited JSON-RPC over stdio, as required by MCP's stdio transport.
     const out = value => process.stdout.write(`${JSON.stringify(value)}\n`);
     const toolContracts = CONTRACT.filter(r => r.key !== 'transferCode').map(r => {
@@ -82,6 +88,7 @@ async function main() {
           if (!toolContracts.some(t => t.name === request.params?.name)) throw Error('Unknown tool');
           try {
             const input = request.params.arguments || {};
+            const c = await buyer();
             if (request.params.name === 'register' && process.env.DOMAIN_REGISTRANT_FILE) input.registrant = JSON.parse(readFileSync(process.env.DOMAIN_REGISTRANT_FILE, 'utf8'));
             const answer = request.params.name === 'vercelConnect' ? await vercel(c).connect(input) : await c.call(request.params.name, input);
             result = { content: [{ type: 'text', text: JSON.stringify(answer) }] };
@@ -90,7 +97,7 @@ async function main() {
         out({ jsonrpc: '2.0', id: request.id, result });
       } catch { out({ jsonrpc: '2.0', id: request?.id ?? null, error: { code: -32600, message: 'Invalid request' } }); }
     }
-    c.store.close(); return;
+    client?.store.close(); return;
   }
   console.log('domain-rails init-owner [file] | schemas | check SELLER_URL [domain] | node-toml SELLER_URL NODE_URL [upstream] | call TOOL INPUT.json | mcp');
 }

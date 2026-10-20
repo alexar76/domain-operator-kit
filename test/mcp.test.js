@@ -45,3 +45,32 @@ test('MCP subprocess lists safe tools and completes quote/register/status/DNS wi
     lines.close(); await new Promise(resolve => server.close(resolve)); store.close(); rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('MCP lists tools with no seller and no owner key', async () => {
+  const proc = spawn(process.execPath, ['bin/domain-rails.mjs', 'mcp'], {
+    cwd: new URL('..', import.meta.url),
+    env: { PATH: process.env.PATH },
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  const lines = createInterface({ input: proc.stdout });
+  const pending = new Map();
+  lines.on('line', line => { const message = JSON.parse(line); pending.get(message.id)?.(message); });
+  const rpc = (method, params) => new Promise((resolve, reject) => {
+    const id = method === 'initialize' ? 1 : 2;
+    const timeout = setTimeout(() => reject(Error('MCP timeout')), 10000);
+    pending.set(id, result => { clearTimeout(timeout); resolve(result); });
+    proc.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+  });
+  try {
+    const init = await rpc('initialize', { protocolVersion: '2024-11-05', clientInfo: { name: 'probe', version: '0' }, capabilities: {} });
+    assert.equal(init.result.serverInfo.name, 'domain-rails');
+    const names = (await rpc('tools/list', {})).result.tools.map(tool => tool.name);
+    assert.ok(names.includes('quote'));
+    assert.ok(!names.includes('transferCode'));
+    assert.equal(proc.exitCode, null);
+  } finally {
+    proc.stdin.end();
+    lines.close();
+    proc.kill();
+  }
+});

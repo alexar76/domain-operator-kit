@@ -1,0 +1,13 @@
+# Stdio MCP image for local checks. Glama's admin form generates its own Debian image
+# and does not build this file. The runtime matches package.json and the seller image:
+# Node 22.22.1 on Debian bookworm, not NodeSource on trixie.
+FROM node:22.22.1-bookworm-slim
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund \
+ && mkdir -p /app/data && chown node:node /app/data
+COPY --chown=node:node src ./src
+COPY --chown=node:node bin ./bin
+USER node
+ENTRYPOINT ["node", "bin/domain-rails.mjs", "mcp"]

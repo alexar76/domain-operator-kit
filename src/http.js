@@ -18,12 +18,16 @@ export function createHttpServer(service, { requestsPerMinute = 120, maxConcurre
       active++; counted = true;
       const path = new URL(req.url, 'http://localhost').pathname;
       if (req.method === 'GET' && path === '/healthz') return send(200, { ok: true, mode: service.mode, supplier: service.provider.kind,
+        orders: service.refusesOrders ? 'refused_demo' : service.mode === 'live' ? 'live' : 'simulated',
+        ...(service.liveMissing.length ? { live_missing: service.liveMissing } : {}),
         real_payments: service.payments.kind === 'x402', provider_pubkey: service.signer.publicKey,
         pending_orders: service.store.all('orders').filter(o => !['delivered', 'refunded', 'cancelled', 'awaiting_payment'].includes(o.state)).length });
       if (req.method === 'GET' && path === '/listing.json') return send(200, listing(service));
       if (req.method !== 'POST') return send(405, { success: false, error: 'method_not_allowed' });
       const route = CONTRACT.find(c => c.path === path || (path === '/quote/invoke' && c.key === 'quote'));
       if (!route) return send(404, { success: false, error: 'not_found' });
+      // Before owner authentication, so an agent without a key still learns why it cannot buy here.
+      if (service.refusesOrders && ['register', 'renew'].includes(route.key)) fail('demo_mode', 403);
       if (!String(req.headers['content-type'] || '').startsWith('application/json')) fail('json_required', 415);
       const chunks = []; let size = 0;
       for await (const chunk of req) { size += chunk.length; if (size > 32768) fail('body_too_large', 413); chunks.push(chunk); }

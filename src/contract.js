@@ -17,6 +17,13 @@ export const CONTRACT = [
   { key: 'transferCode', path: '/transfer-code', feature: 'transfer_code', description: 'Retrieve the secret transfer code of an owned domain. Registrar locks still apply. Do not publish this result.', input: object({ domain: string }, ['domain']) },
 ].map(c => ({ ...c, capability_id: CAPS[c.key] }));
 
+/** What a non-live seller says first, so no agent mistakes it for a place to buy. */
+export function demoNote(service) {
+  if (service.mode === 'live') return '';
+  if (service.refusesOrders) return `DEMO SELLER: real availability (${service.provider.availability === 'rdap' ? 'registry RDAP' : 'simulated'}), illustrative prices; orders are refused with demo_mode. `;
+  return 'TEST SELLER; no real domains or payments. ';
+}
+
 export function listing(service) {
   const available = CONTRACT.filter(c => !c.feature || service.provider.features.includes(c.feature));
   const quote = available[0];
@@ -24,7 +31,7 @@ export function listing(service) {
     provider: { kind: service.provider.kind, tlds: service.provider.tlds },
     pricing: { fixed_markup_usd: service.markupUsd, hub_commission_usd: '0', per: 'registration or renewal order' },
     listings: [{ capability_id: CAPS.quote, product_id: service.productId, publisher_id: service.productId, provider_pubkey: service.signer.publicKey,
-      version: 'v1', name: `${service.sellerName} — domains`, description: `${service.mode === 'live' ? '' : 'TEST SELLER; no real domains or payments. '}${quote.description}`,
+      version: 'v1', name: `${service.sellerName} — domains`, description: `${demoNote(service)}${quote.description}`,
       invoke_url: `${service.origin}/quote/invoke`, price_per_call_usd: 0,
       input_schema: object({ domain: quote.input.properties.domain }, ['domain']), output_schema: { type: 'object' } }],
     capabilities: available.map(c => ({ capability_id: c.capability_id, description: c.description, url: `${service.origin}${c.path}`, method: 'POST',
@@ -35,5 +42,5 @@ export function listing(service) {
 
 export function nodeToml(service, nodeUrl, upstream = 'http://127.0.0.1:9495') {
   const q = JSON.stringify;
-  return `# Generated domain federation node. Only public quotes go through Hub.\nname = ${q(service.sellerName)}\ndescription = ${q(`${service.mode === 'live' ? '' : 'TEST ONLY. '}Domain registration quotes; direct seller orders and private owner management.`)}\nurl = ${q(nodeUrl)}\nupstream = ${q(upstream)}\n\n[[capability]]\nid = "domains.quote@v1"\nproduct = ${q(service.productId)}\nname = "Domain registration quotes"\ndescription = "Exact domain availability and one-year price. Quote is not a reservation. Buy directly at order_url; private owner data never goes through Hub."\nprice_usd = 0\nmethod = "POST"\npath = "/quote"\nprovider_pubkey = ${q(service.signer.publicKey)}\ninput_schema = { type = "object", required = ["domain"], additionalProperties = false, properties = { domain = { type = "string", description = "An exact registrable domain, e.g. example.com" } } }\n`;
+  return `# Generated domain federation node. Only public quotes go through Hub.\nname = ${q(service.sellerName)}\ndescription = ${q(`${demoNote(service)}Domain registration quotes; direct seller orders and private owner management.`)}\nurl = ${q(nodeUrl)}\nupstream = ${q(upstream)}\n\n[[capability]]\nid = "domains.quote@v1"\nproduct = ${q(service.productId)}\nname = "Domain registration quotes"\ndescription = ${q(`${demoNote(service)}Exact domain availability and one-year price. Quote is not a reservation. Buy directly at order_url; private owner data never goes through Hub.`)}\nprice_usd = 0\nmethod = "POST"\npath = "/quote"\nprovider_pubkey = ${q(service.signer.publicKey)}\ninput_schema = { type = "object", required = ["domain"], additionalProperties = false, properties = { domain = { type = "string", description = "An exact registrable domain, e.g. example.com", examples = ["example.com"] } } }\n`;
 }

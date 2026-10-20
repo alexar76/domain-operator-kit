@@ -92,6 +92,10 @@ DOMAIN_ALLOW_DEMO=1 node bin/domain-rails.mjs check http://127.0.0.1:9495
 
 This checks the public quote protocol and signature; it does not certify the seller. The server persists encrypted documents and keys in `data/`. Do not discard that directory between deployments.
 
+### A public node: demo until your keys are in
+
+`DOMAIN_MODE=auto` is for a node you publish before you sell. Without keys it is a **public demo**: availability is real (the registries' own RDAP for `.com`, `.net`, `.org`), quotes are signed and marked `demo` with illustrative prices, reads answer, and only `register` and `renew` are refused with `403 demo_mode`. When every live setting is in (production registrar keys or an HTTP supplier, `PAY_TO`, `CDP_KEY_FILE`, `DOMAIN_REFUND_KEY_FILE`, HTTPS `DOMAIN_PUBLIC_URL` and `DOMAIN_TERMS_URL`, `DOMAIN_UPSTREAM_COST_CONFIRMED=1`), the next start sells live. Until then `/healthz` lists the setting names still missing (`live_missing`), never their values. Porkbun stays sandbox-only. modelmarket.dev runs such a node as its domain showcase.
+
 ## Agent capabilities
 
 | Capability | Purpose |

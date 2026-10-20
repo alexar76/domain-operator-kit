@@ -7,13 +7,14 @@ const TERMINAL = new Set(['delivered', 'refunded', 'cancelled']);
 
 export class DomainService {
   constructor({ store, provider, payments, signer, origin, productId = 'domains-operator', sellerName = 'Domain operator',
-    markupUsd = '2.00', termsUrl, termsVersion = '1', now = () => Date.now(), quoteTtlMs = 300000, mode = 'demo' }) {
+    markupUsd = '2.00', termsUrl, termsVersion = '1', now = () => Date.now(), quoteTtlMs = 300000, mode = 'demo',
+    demoOrders = true, liveMissing = [] }) {
     if (!store || !provider || !payments || !signer || !origin) throw Error('store, provider, payments, signer and origin required');
     if (mode === 'live' && (provider.sandbox || payments.kind === 'demo')) throw Error('live mode requires real registrar and payment adapters');
     if (mode !== 'live' && payments.kind !== 'demo') throw Error('test modes cannot accept real payments');
     if (!Number.isInteger(quoteTtlMs) || quoteTtlMs < 1000 || quoteTtlMs > 600000) throw Error('invalid quote lifetime');
     units(markupUsd);
-    Object.assign(this, { store, provider, payments, signer, origin, productId, sellerName, markupUsd, termsUrl, termsVersion, now, quoteTtlMs, mode });
+    Object.assign(this, { store, provider, payments, signer, origin, productId, sellerName, markupUsd, termsUrl, termsVersion, now, quoteTtlMs, mode, demoOrders, liveMissing });
     this.running = new Map();
     this.recovering = false;
     this.recoveryCursor = 0;
@@ -23,6 +24,8 @@ export class DomainService {
     const next = previous.catch(() => {}).then(fn); this.running.set(key, next);
     return next.finally(() => { if (this.running.get(key) === next) this.running.delete(key); });
   }
+  /** A public demo seller: everything answers except buying (register, renew). */
+  get refusesOrders() { return this.mode === 'demo' && !this.demoOrders; }
   audit(type, order) { this.store.put('audit', token(), { at: this.now(), type, order_id: order.id, state: order.state }); }
   save(order, state, extra = {}) {
     Object.assign(order, extra, { state, updated_at: this.now() });
@@ -54,6 +57,7 @@ export class DomainService {
       terms_version: this.termsVersion, terms_url: this.termsUrl,
       registration_requirements: ['registrant_contact', 'accept_terms', 'possible_registrant_email_verification'],
       domain_reserved: false, mode: this.mode, order_url: `${this.origin}/${operation}`,
+      ...(this.refusesOrders ? { demo: { orders: 'refused with demo_mode', prices: 'illustrative', availability: this.provider.availability || 'simulated' } } : {}),
       payment_policy: 'Payment settles before irreversible registration. Definitive non-delivery is refunded; unknown outcomes are reconciled.' };
     this.store.put('quotes', q.quote_id, q);
     const { owner: _owner, ...publicQuote } = q;
@@ -96,6 +100,7 @@ export class DomainService {
       ...(order.reason ? { reason: order.reason } : {}) };
   }
   async order(input, owner, operation, paymentHeader) {
+    if (this.refusesOrders) fail('demo_mode', 403);
     return this.serial(`domain:${input.quote_id && this.store.get('quotes', input.quote_id)?.domain}`, async () => {
       let { order } = this.orderInput(input, owner, operation);
       if (order.state !== 'awaiting_payment') return this.view(order);

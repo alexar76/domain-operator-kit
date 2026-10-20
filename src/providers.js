@@ -203,9 +203,30 @@ export function httpProvider({ url, secret, tlds, sandbox = false, features = ['
   };
 }
 
-export function demoProvider(store) {
+// The registries' own RDAP: a registered name answers 200, an unregistered one 404. Public, no keys,
+// so a demo seller can answer real availability while its prices stay illustrative.
+const RDAP = { com: 'https://rdap.verisign.com/com/v1/domain/', net: 'https://rdap.verisign.com/net/v1/domain/',
+  org: 'https://rdap.publicinterestregistry.org/rdap/domain/' };
+export function rdapAvailability({ fetchImpl = fetch } = {}) {
+  return async domain => {
+    const base = RDAP[domain.slice(domain.lastIndexOf('.') + 1)];
+    if (!base) throw new SupplierError('availability_unknown');
+    let response;
+    try { response = await fetchImpl(base + domain, { headers: { accept: 'application/rdap+json' }, signal: AbortSignal.timeout(10000) }); }
+    catch { throw new SupplierError('availability_unknown'); }
+    if (response.status === 404) return true;
+    if (response.ok) return false;
+    throw new SupplierError('availability_unknown');
+  };
+}
+
+export function demoProvider(store, { availability = null } = {}) {
   return { kind: 'demo', sandbox: true, tlds: ['com', 'net', 'org'], features: ['register', 'renew', 'info', 'dns'],
-    async quote({ domain, operation }) { return { available: operation === 'renew' || !store.get('demo-domains', domain), currency: 'USD', cost_usd: '10.00', renewal_cost_usd: '12.00', premium: false, period_years: 1 }; },
+    availability: availability ? 'rdap' : 'simulated',
+    async quote({ domain, operation }) {
+      const free = operation === 'renew' || (!store.get('demo-domains', domain) && (!availability || await availability(domain)));
+      return { available: free, currency: 'USD', cost_usd: '10.00', renewal_cost_usd: '12.00', premium: false, period_years: 1 };
+    },
     async prepare({ order_id }) { return { customer_handle: `demo-${order_id}` }; },
     async submit(order) {
       const prior = store.get('demo-orders', order.id); if (prior) return prior;

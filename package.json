@@ -26,10 +26,10 @@
     "sandbox:porkbun:init": "node scripts/porkbun-sandbox.mjs"
   },
   "dependencies": {
-    "@coinbase/cdp-sdk": "1.57.1",
+    "@coinbase/cdp-sdk": "1.59.0",
     "@x402/core": "2.28.0",
     "@x402/evm": "2.28.0",
-    "viem": "2.57.6"
+    "viem": "2.57.7"
   },
   "repository": {
     "type": "git",

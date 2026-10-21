@@ -7,7 +7,7 @@ Local documentation for the `alexar76` ecosystem in `aicom`. No GitHub publishin
 - [Español](es.md)
 - [Français](fr.md)
 - [简体中文](zh.md)
-- [English article draft for DEV.to](../../../../PromoMaterials/devto/sentinel-domain-pilot/article.md) — primary publication draft, not published
+- English article draft for DEV.to — kept outside this repository, not published
 
 Test date: 2026-10-20 (Europe/Moscow).
 

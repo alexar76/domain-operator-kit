@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Domain desk — example storefront of the Domain Operator Kit</title>
+<meta name="description" content="The example desk a domain operator serves next to their seller node: search .com, .net and .org names with live registry availability, see the signed price with the seller's fixed markup, and walk through the order. Demo: nothing is sold." />
+<meta property="og:title" content="Domain desk — example storefront of the Domain Operator Kit" />
+<meta property="og:description" content="Live registry availability, signed quotes, the seller's fixed markup and the order flow an agent uses. Demo: nothing is sold." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://domains.modelmarket.dev/desk/" />
+<meta name="theme-color" content="#f4f2ec" />
+<meta name="color-scheme" content="light dark" />
+<link rel="canonical" href="https://domains.modelmarket.dev/desk/" />
+<link rel="alternate" hreflang="en" href="https://domains.modelmarket.dev/desk/?lang=en" />
+<link rel="alternate" hreflang="ru" href="https://domains.modelmarket.dev/desk/?lang=ru" />
+<link rel="alternate" hreflang="es" href="https://domains.modelmarket.dev/desk/?lang=es" />
+<link rel="alternate" hreflang="fr" href="https://domains.modelmarket.dev/desk/?lang=fr" />
+<link rel="alternate" hreflang="zh" href="https://domains.modelmarket.dev/desk/?lang=zh" />
+<link rel="alternate" hreflang="x-default" href="https://domains.modelmarket.dev/desk/" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.3' cy='.25'%3E%3Cstop offset='0' stop-color='%238fb3ff'/%3E%3Cstop offset='.6' stop-color='%232c4c8c'/%3E%3Cstop offset='1' stop-color='%231b2a55'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23g)'/%3E%3Ctext x='32' y='41' font-family='monospace' font-size='22' font-weight='700' text-anchor='middle' fill='%23fff'%3E.com%3C/text%3E%3C/svg%3E" />
+<!-- The seller node this desk sells for. Empty = this page's own origin, where the kit's nginx puts it. -->
+<meta name="domain-node" content="" />
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="../assets/site.css" />
+<style>
+  .banner{position:relative;z-index:21;background:linear-gradient(90deg,#24407e,#3b2f86 50%,#24407e);background-size:200% 100%;animation:flow 12s linear infinite;color:#eef2ff;text-align:center;font-size:13px;line-height:1.5;padding:9px 16px}
+  .banner a{color:#fff;text-decoration:underline}
+  @keyframes flow{to{background-position:-200% 0}}
+  .nav{position:sticky}
+  .desk-hero{position:relative;overflow:hidden;isolation:isolate;padding:84px 0 64px}
+  .aurora{position:absolute;inset:-20% -10% auto;height:640px;z-index:-1;pointer-events:none;filter:blur(70px);opacity:.75}
+  .aurora i{position:absolute;border-radius:50%;mix-blend-mode:normal}
+  .aurora i:nth-child(1){width:520px;height:520px;left:8%;top:0;background:radial-gradient(circle,rgba(90,200,255,.42),transparent 65%);animation:float1 18s ease-in-out infinite alternate}
+  .aurora i:nth-child(2){width:600px;height:600px;right:6%;top:-60px;background:radial-gradient(circle,rgba(167,139,250,.38),transparent 65%);animation:float2 22s ease-in-out infinite alternate}
+  .aurora i:nth-child(3){width:420px;height:420px;left:42%;top:160px;background:radial-gradient(circle,rgba(245,194,107,.30),transparent 65%);animation:float1 26s ease-in-out infinite alternate-reverse}
+  @keyframes float1{to{transform:translate(90px,60px) scale(1.15)}}
+  @keyframes float2{to{transform:translate(-110px,80px) scale(.9)}}
+  .grid-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+           background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;
+           -webkit-mask:radial-gradient(ellipse at 50% 20%,#000 0,transparent 70%);mask:radial-gradient(ellipse at 50% 20%,#000 0,transparent 70%)}
+  .narrow{max-width:880px}
+  .desk-hero h1{font-size:clamp(40px,5.2vw,68px);margin:18px 0 16px}
+  .desk-hero h1 .grad{display:inline}
+  .search-shell{margin-top:8px;padding:10px;border-radius:22px;background:var(--glass);border:1px solid var(--line);box-shadow:var(--sh-3);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  .search.big input{font-size:20px;padding:16px 18px;background:transparent;border-color:transparent}
+  .search.big input:focus{box-shadow:none;border-color:transparent}
+  .search.big .btn{padding:0 28px;min-height:58px;border-radius:14px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  .chips span{font-size:13px;color:var(--muted);margin-right:4px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:6px 15px;min-height:36px;font:600 13px var(--mono);background:var(--card);color:var(--muted);cursor:pointer;box-shadow:var(--sh-1);transition:transform .2s,background .2s,color .2s}
+  .chip:hover{transform:translateY(-1px)}
+  .chip[aria-pressed="true"]{background:linear-gradient(135deg,#4a74d0,#2c4c8c);color:#fff;border-color:transparent}
+  .ideas-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px}
+  .steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .steps .card{padding:26px}
+  .steps .card h3{margin-top:8px}
+  dd.total{font-size:20px;background:var(--edge);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+  .contact label{display:grid;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+  .contact input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+  .contact input:disabled{opacity:.75}
+  .contact .full{grid-column:1/-1}
+  .terms{display:flex;gap:10px;align-items:flex-start;margin:24px 0 16px;font-size:15px}
+  .terms input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:#3b62b8}
+  .answer{margin-top:18px}
+  .answer p{margin:12px 0 0}
+  details{margin-top:20px}
+  summary{cursor:pointer;font-weight:600}
+  details pre{margin-top:12px}
+  #checkout .wrap{animation:rowIn .6s cubic-bezier(.2,.8,.2,1) both}
+  @media(max-width:760px){.steps,.contact{grid-template-columns:minmax(0,1fr)}.desk-hero{padding:52px 0 42px}.search-shell{padding:8px}}
+</style>
+</head>
+<body>
+
+<div class="banner" id="banner" hidden><span data-i18n="banner">Demo seller: availability is real, prices are illustrative, and orders are refused. This is the example desk of the Domain Operator Kit.</span> <a href="../" data-i18n="banner_link">Run your own →</a></div>
+
+<header class="nav">
+  <a class="logo" href="./"><i>.d</i><span id="seller-name">Domain desk</span></a>
+  <nav>
+    <a class="hide-s" href="#how" data-i18n="nav_how">How buying works</a>
+    <a href="../" data-i18n="nav_kit">The kit</a>
+    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch theme"><span aria-hidden="true">◐</span></button>
+    <span class="langs" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="zh">ZH</button></span>
+  </nav>
+</header>
+
+<main>
+<section class="desk-hero">
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="wrap narrow">
+    <span class="eyebrow"><b></b><span id="eyebrow">Domain registration · one year</span></span>
+    <h1 data-i18n="h1">Find a name for what you built.</h1>
+    <p class="lead" style="max-width:660px" id="lead">Exact names for one year, registered to you. The price is the registrar's cost plus this seller's fixed markup, shown and signed before you pay.</p>
+    <div class="search-shell">
+      <form class="search big" id="q" autocomplete="off" role="search">
+        <input id="name" name="q" maxlength="80" spellcheck="false" autocapitalize="off" placeholder="yourproject" data-i18n-ph="ph" aria-label="Domain name" />
+        <button class="btn primary" type="submit" data-i18n="go">Search</button>
+      </form>
+    </div>
+    <div class="chips" id="tlds"><span data-i18n="tlds_label">Extensions:</span></div>
+    <p class="err" id="err" role="alert" hidden></p>
+    <div class="results" id="results" aria-live="polite"></div>
+    <div class="ideas-head" id="ideas-head" hidden>
+      <div class="kicker" data-i18n="ideas_k">Close alternatives</div>
+      <button type="button" class="btn" id="more" data-i18n="more">More ideas</button>
+    </div>
+    <div class="results" id="ideas" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="block" id="checkout" hidden>
+  <div class="wrap narrow">
+    <div class="kicker" data-i18n="co_k">Checkout</div>
+    <h2 class="mono grad" id="co-domain" style="overflow-wrap:anywhere">name.com</h2>
+    <p class="sub" style="margin-bottom:28px" data-i18n="co_sub">What a buyer — a person's agent or an app — goes through at this seller. Nothing here is sent until you place the order, and the order carries no personal data on this page.</p>
+    <div class="steps">
+      <div class="card lift">
+        <div class="n">1</div><h3 data-i18n="co1_h">The signed price</h3>
+        <dl class="kv" id="co-price"></dl>
+        <p class="fine" id="co-expiry"></p>
+        <p class="fine" id="co-sig"></p>
+      </div>
+      <div class="card lift">
+        <div class="n">2</div><h3 data-i18n="co2_h">Registrant</h3>
+        <p data-i18n="co2_p">The domain is registered to this contact. It goes to the seller only, never to a hub, and the registry may ask the owner to confirm the email.</p>
+        <div class="contact" aria-describedby="co-contact-note">
+          <label><span data-i18n="f_first">First name</span><input disabled placeholder="Ada" /></label>
+          <label><span data-i18n="f_last">Last name</span><input disabled placeholder="Lovelace" /></label>
+          <label class="full"><span data-i18n="f_email">Email</span><input disabled placeholder="ada@example.com" /></label>
+          <label><span data-i18n="f_phone">Phone</span><input disabled placeholder="+44 20 7946 0000" /></label>
+          <label><span data-i18n="f_country">Country</span><input disabled placeholder="GB" /></label>
+          <label class="full"><span data-i18n="f_address">Street, number, city, postal code</span><input disabled placeholder="1 Example Street, London SW1A 1AA" /></label>
+        </div>
+        <p class="fine" id="co-contact-note" data-i18n="co2_note">A preview: this page never asks for your details. An agent sends the contact from its owner's own file (DOMAIN_REGISTRANT_FILE).</p>
+      </div>
+      <div class="card lift">
+        <div class="n">3</div><h3 data-i18n="co3_h">Owner key</h3>
+        <p data-i18n="co3_p">The buyer's client makes an Ed25519 owner key and signs the order with it. Every later request — DNS, renewal, transfer code — must carry the same signature, so only the owner manages the name. There is no key recovery: keep it safe.</p>
+      </div>
+      <div class="card lift">
+        <div class="n">4</div><h3 data-i18n="co4_h">Payment</h3>
+        <p id="co-pay">One x402 payment in USDC on Base, straight into the seller's wallet. It settles before the registration; a registrar's definite refusal is refunded to the paying wallet.</p>
+      </div>
+    </div>
+    <label class="terms"><input type="checkbox" id="co-terms" /><span id="co-terms-text">I accept the seller's terms.</span></label>
+    <div class="cta">
+      <button type="button" class="btn primary" id="co-place" disabled data-i18n="co_place">Place the order</button>
+      <button type="button" class="btn ghost" id="co-back" data-i18n="co_back">Back to the results</button>
+    </div>
+    <div class="answer" id="co-answer" hidden aria-live="polite">
+      <pre class="win" id="co-out" data-title="/register"></pre>
+      <p id="co-explain"></p>
+    </div>
+    <details>
+      <summary data-i18n="co_agent">What an agent sends instead</summary>
+      <pre class="win" id="co-agent" data-title="MCP · tools/call"></pre>
+    </details>
+  </div>
+</section>
+
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="how_k">How buying works</div>
+    <h2 class="reveal" data-i18n="how_title">A desk for people, a node for agents — one seller</h2>
+    <div class="grid4" style="margin-top:32px">
+      <div class="card lift reveal"><div class="ico">🤖</div><h3 data-i18n="h1_h">Agents buy here too</h3><p data-i18n="h1_p">This page and an AI agent call the same node. domains.quote@v1 is free; registration is one x402 payment. AIMarket hubs list the seller in their catalogue, so agents find it on their own.</p></div>
+      <div class="card lift reveal"><div class="ico">🔑</div><h3 data-i18n="h2_h">After the purchase</h3><p data-i18n="h2_p">The owner key runs the domain: DNS records with a revision check, expiry and nameservers, renewal at a fresh quote, and a Vercel connector on the buyer's side.</p></div>
+      <div class="card lift reveal"><div class="ico">⏳</div><h3 data-i18n="h3_h">If an answer gets lost</h3><p data-i18n="h3_p">Pending is not failed: ask for the order's status, never buy again. A definite refusal is refunded to the paying wallet; unclear outcomes are reconciled first.</p></div>
+      <div class="card lift reveal"><div class="ico">🏷️</div><h3 data-i18n="h4_h">Your own desk</h3><p data-i18n="h4_p">This page is static and ships with the kit in docs/landing/desk. Serve it at your node's origin: it reads your listing.json for the seller's name, extensions and markup.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap row2">
+    <div><span data-i18n="foot_runs">Runs on the</span> <a href="../">Domain Operator Kit</a> · MIT<br><span id="foot-key"></span></div>
+    <div><a href="../listing.json">listing.json</a> · <a href="../healthz">healthz</a> · <a href="https://github.com/alexar76/domain-operator-kit">GitHub</a></div>
+  </div>
+</footer>
+
+<script type="module" src="../assets/desk.js"></script>
+</body>
+</html>

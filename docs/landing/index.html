@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Domain Operator Kit — sell domains to AI agents</title>
+<meta name="description" content="Open-source seller node for domain operators: signed quotes, owner-signed orders, x402 payment in USDC on Base, DNS and a Vercel connector. Bring your registrar account and set a fixed markup; agents find you through AIMarket hubs." />
+<meta property="og:title" content="Domain Operator Kit — sell domains to AI agents" />
+<meta property="og:description" content="Run your own domain seller for AI agents: your registrar account, your markup, your wallet. Live demo node with real registry availability." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://domains.modelmarket.dev/" />
+<meta name="theme-color" content="#060a14" />
+<meta name="color-scheme" content="light dark" />
+<link rel="canonical" href="https://domains.modelmarket.dev/" />
+<link rel="alternate" hreflang="en" href="https://domains.modelmarket.dev/?lang=en" />
+<link rel="alternate" hreflang="ru" href="https://domains.modelmarket.dev/?lang=ru" />
+<link rel="alternate" hreflang="es" href="https://domains.modelmarket.dev/?lang=es" />
+<link rel="alternate" hreflang="fr" href="https://domains.modelmarket.dev/?lang=fr" />
+<link rel="alternate" hreflang="zh" href="https://domains.modelmarket.dev/?lang=zh" />
+<link rel="alternate" hreflang="x-default" href="https://domains.modelmarket.dev/" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.3' cy='.25'%3E%3Cstop offset='0' stop-color='%238fb3ff'/%3E%3Cstop offset='.6' stop-color='%232c4c8c'/%3E%3Cstop offset='1' stop-color='%231b2a55'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23g)'/%3E%3Ctext x='32' y='41' font-family='monospace' font-size='22' font-weight='700' text-anchor='middle' fill='%23fff'%3E.com%3C/text%3E%3C/svg%3E" />
+<script src="assets/theme.js"></script>
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* The hero is a dark stage in both themes: the 3D scene behind, the copy and the live check in front. */
+  .hero{position:relative;min-height:max(780px,100svh);padding:120px 4vw 96px;display:flex;align-items:center;overflow:hidden;isolation:isolate;background:#060a14;color:var(--ink);
+        --ink:#eef2fb;--muted:#aab6cf;--line:rgba(150,175,235,.2);--card:rgba(16,23,44,.6);--surface:rgba(255,255,255,.06);--brand:#a9c1ff;--ok:#5be3a6;--bad:#ff8f8f;--warn:#ffd27a;--spot:rgba(140,170,255,.13)}
+  #scene{position:absolute;top:0;left:0;width:100%;height:max(780px,100svh);display:block;z-index:-2;cursor:grab;touch-action:pan-y;
+          -webkit-mask-image:linear-gradient(#000 76%,transparent);mask-image:linear-gradient(#000 76%,transparent)}
+  #scene:active{cursor:grabbing}
+  .hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+                background:linear-gradient(0deg,var(--bg) 0,rgba(6,10,20,0) 130px),linear-gradient(90deg,rgba(6,10,20,.9) 0%,rgba(6,10,20,.7) 34%,rgba(6,10,20,0) 52%)}
+  .hero.no3d{background:radial-gradient(700px 500px at 72% 40%,rgba(90,120,255,.28),transparent 60%),radial-gradient(500px 400px at 85% 75%,rgba(167,139,250,.2),transparent 60%),#060a14}
+  .hero-inner{position:relative;width:100%;display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:48px;align-items:center;pointer-events:none}
+  .hero-inner > *{pointer-events:auto}
+  .hero-copy{max-width:600px}
+  .hero-copy .lead{margin-bottom:24px}
+  .hero-copy .cta{margin-top:26px}
+  .hero h1{background:linear-gradient(100deg,#ffffff 0%,#e3ebff 40%,#a9c1ff 70%,#cdb9ff 100%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+           animation:sheen 9s ease-in-out infinite alternate;text-shadow:0 0 60px rgba(120,150,255,.15)}
+  @keyframes sheen{to{background-position:100% 0}}
+  .hero .btn{background:rgba(255,255,255,.06);border-color:rgba(160,185,255,.25);color:#eef2fb;backdrop-filter:blur(8px)}
+  .hero .btn.primary{background:linear-gradient(135deg,#6d8ff0,#3a5fc4 50%,#5b3fc0);border-color:transparent;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 34px -10px rgba(90,120,255,.8)}
+  .hero .btn.ghost{background:transparent;border-color:transparent}
+  .stats{display:flex;gap:30px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:24px;margin-top:40px;color:var(--muted);font-size:12px}
+  .stats b{display:block;font:500 27px/1.1 ui-sans-serif,system-ui;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px}
+  .stats .live b::after{content:"";display:inline-block;width:7px;height:7px;margin-left:8px;border-radius:50%;background:var(--ok);vertical-align:middle;box-shadow:0 0 12px var(--ok);animation:blink 2s infinite}
+  .glass{width:100%;padding:24px 26px;border-radius:24px;
+         background:linear-gradient(160deg,rgba(26,36,70,.62),rgba(9,14,28,.5));border:1px solid rgba(160,190,255,.22);
+         backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+         box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 40px 90px -30px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.2)}
+  .glass h3{margin:6px 0 14px;font:400 26px/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.02em}
+  .legend{position:absolute;right:4vw;top:104px;display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-end;max-width:520px;font:11px var(--mono);color:var(--muted);letter-spacing:.04em;pointer-events:none}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .l-node{background:#cfe0ff;box-shadow:0 0 10px #8fb3ff} .l-reg{background:linear-gradient(90deg,#5ac8ff,#a78bfa,#f5c26b)} .l-agent{background:#eaf1ff;box-shadow:0 0 8px #9fb8ff}
+  body.over-hero .nav{background:rgba(6,10,20,.55);border-bottom-color:rgba(150,175,235,.14);box-shadow:none}
+  body.over-hero .nav .logo,body.over-hero .nav nav a{color:#eef2fb}
+  body.over-hero .nav nav a:hover{background:rgba(255,255,255,.08)}
+  body.over-hero .nav .langs,body.over-hero .nav .theme-toggle{background:rgba(255,255,255,.06);border-color:rgba(150,175,235,.2);color:#eef2fb;box-shadow:none}
+  body.over-hero .nav .langs button{color:#aab6cf}
+  .nav{transition:background .4s,border-color .4s}
+  .two{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:30px;align-items:start}
+  .try-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+  #try-out{max-height:460px}
+  .docs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .docs .card{padding:22px}
+  .docs h3{margin:0 0 10px;font-size:16px}
+  .docs a{display:block;font-size:14px;padding:4px 0}
+  .docs a::after{content:" →";opacity:0;transition:opacity .2s,margin .2s}
+  .docs a:hover::after{opacity:1;margin-left:3px}
+  @media(max-width:1000px){
+    .hero{display:block;min-height:0;padding:0 0 64px}
+    #scene{position:relative;height:min(64vh,540px);min-height:380px;z-index:0}
+    .hero::before{z-index:1;background:linear-gradient(0deg,#060a14 0,rgba(6,10,20,0) 120px) 0 0/100% min(64vh,540px) no-repeat,linear-gradient(0deg,var(--bg) 0,rgba(6,10,20,0) 90px)}
+    .hero-inner{grid-template-columns:minmax(0,1fr);gap:30px;padding:0 20px;margin-top:-70px;z-index:2}
+    .legend{display:none}
+    .two{grid-template-columns:minmax(0,1fr)}
+    .docs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:640px){h1{font-size:46px}.glass{padding:20px}.docs{grid-template-columns:minmax(0,1fr)}.stats{gap:22px}.legend{display:none}}
+</style>
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.min.js","three/addons/":"./assets/vendor/three/addons/"}}</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Domain Operator Kit","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, macOS (Node.js 22.13+)","license":"https://opensource.org/licenses/MIT","url":"https://domains.modelmarket.dev/","codeRepository":"https://github.com/alexar76/domain-operator-kit","inLanguage":["en","ru","es","fr","zh"],"description":"Open-source seller node that sells domain registrations to AI agents: signed quotes, owner-signed orders, x402 payment in USDC on Base, DNS management.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <a class="logo" href="#top"><i>.d</i><span>Domain Operator Kit</span></a>
+  <nav>
+    <a href="desk/" data-i18n="nav_desk">Example desk</a>
+    <a class="hide-s" href="#run" data-i18n="nav_run">Run it</a>
+    <a class="hide-s" href="#docs" data-i18n="nav_docs">Docs</a>
+    <a class="hide-s" href="https://github.com/alexar76/domain-operator-kit">GitHub</a>
+    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch theme"><span aria-hidden="true">◐</span></button>
+    <span class="langs" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="zh">ZH</button></span>
+  </nav>
+</header>
+
+<main>
+<section class="hero" id="top">
+  <canvas id="scene" aria-label="Your seller node, the registries it asks and the agents asking it, in 3D"></canvas>
+  <div class="legend" aria-hidden="true">
+    <span><i class="l-node"></i><span data-i18n="lg_node">your seller node</span></span>
+    <span><i class="l-reg"></i><span data-i18n="lg_reg">registries</span></span>
+    <span><i class="l-agent"></i><span data-i18n="lg_agents">agents asking for quotes</span></span>
+    <span data-i18n="lg_drag">drag to turn</span>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow"><b></b><span data-i18n="eyebrow">Open source · MIT · AIMarket rails</span></span>
+      <h1 data-i18n="h1">Sell domains to AI agents.</h1>
+      <p class="lead" data-i18n="lead">An agent can build and ship an app. This kit lets it take the next step: get a signed price for a name, register it to its real owner, set the DNS and connect it to Vercel. You run the seller with your own registrar account, your wallet and a fixed markup.</p>
+      <div class="glass" id="check">
+        <div class="kicker" data-i18n="check_k">Live · registry availability</div>
+        <h3 data-i18n="check_title">Is your name free?</h3>
+        <form class="search" id="hero-q" autocomplete="off">
+          <input id="hero-name" name="name" maxlength="80" spellcheck="false" autocapitalize="off" placeholder="yourproject" data-i18n-ph="check_ph" aria-label="Domain name" />
+          <button class="btn primary" type="submit" data-i18n="check_go">Check</button>
+        </form>
+        <p class="err" id="hero-err" role="alert" hidden></p>
+        <div class="results" id="hero-results" aria-live="polite"></div>
+        <p class="fine" data-i18n-html="check_fine">Availability comes from the registries' own RDAP, right now. Prices on this demo node are illustrative (a $10 registrar cost + the $2 markup) and it sells nothing. Every quote is signed; your browser verifies the signature.</p>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="desk/" data-i18n="cta_desk">Open the example desk</a>
+        <a class="btn" href="#run" data-i18n="cta_run">Run your own seller</a>
+        <a class="btn ghost" href="https://github.com/alexar76/domain-operator-kit">★ GitHub</a>
+      </div>
+      <div class="stats">
+        <div class="live"><b id="s-mode">demo</b><span data-i18n="stat_mode">this node, live</span></div>
+        <div><b id="s-tlds">.com .net .org</b><span data-i18n="stat_tlds">extensions</span></div>
+        <div><b id="s-markup">$2.00</b><span data-i18n="stat_markup">fixed markup per order</span></div>
+        <div><b>$0</b><span data-i18n="stat_hub">hub commission</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="how_k">The sale</div>
+    <h2 class="reveal" data-i18n="how_title">From a name to a working site, in four calls</h2>
+    <p class="sub reveal" data-i18n="how_sub">The same steps whether the buyer is an agent with an MCP client or an app built on the JavaScript client. Nothing irreversible happens before the payment settles.</p>
+    <div class="grid4">
+      <div class="card lift reveal"><div class="n">01</div><h3 data-i18n="how_1_h">Quote</h3><p data-i18n="how_1_p">Free and signed: availability, the registrar's cost, your markup and the total, valid for five minutes. Agents ask your node directly or through an AIMarket hub.</p></div>
+      <div class="card lift reveal"><div class="n">02</div><h3 data-i18n="how_2_h">Order</h3><p data-i18n="how_2_p">Sent straight to you, never through a hub: the registrant's contact, the accepted terms and the owner's public key, which signs every later request.</p></div>
+      <div class="card lift reveal"><div class="n">03</div><h3 data-i18n="how_3_h">Pay</h3><p data-i18n="how_3_p">One x402 payment in USDC on Base, into your wallet. It settles before the registration; a registrar's definite refusal is refunded to the payer.</p></div>
+      <div class="card lift reveal"><div class="n">04</div><h3 data-i18n="how_4_h">Deliver</h3><p data-i18n="how_4_p">Registered for one year with a receipt signed by your node. Then DNS records and, if the buyer wants, a Vercel project — all owner-signed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="roles">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="roles_k">Who it is for</div>
+    <h2 class="reveal" data-i18n="roles_title">One product, three roles</h2>
+    <div class="grid3">
+      <div class="card lift reveal"><div class="ico">🏷️</div><h3 data-i18n="r1_h">Domain operators and resellers</h3><p data-i18n="r1_p">Your registrar account, receiving wallet, refund wallet and fixed markup. A seller node with durable orders that survive restarts and lost responses.</p></div>
+      <div class="card lift reveal"><div class="ico">🔌</div><h3 data-i18n="r2_h">Independent suppliers</h3><p data-i18n="r2_p">Implement the HTTP supplier contract in any language, on your own infrastructure. Operators plug you in next to Openprovider and Porkbun.</p></div>
+      <div class="card lift reveal"><div class="ico">🤖</div><h3 data-i18n="r3_h">Agent and app developers</h3><p data-i18n="r3_p">Signed domains.*@v1 capabilities, a JavaScript client and a stdio MCP server with per-purchase and daily budgets. Purchases stay off until you set them.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="try">
+  <div class="wrap two">
+    <div>
+      <div class="kicker reveal" data-i18n="try_k">What an agent sees</div>
+      <h2 class="reveal" data-i18n="try_title">Ask the node, right now</h2>
+      <p class="sub reveal" style="margin-bottom:20px" data-i18n="try_sub">This is the raw domains.quote@v1 answer for the last name you checked, with the curl that gets it. Then try to buy it: the demo node refuses with demo_mode before it reads anything, which is what a buying agent gets too.</p>
+      <pre class="win reveal" id="try-curl" data-title="terminal"></pre>
+      <div class="try-actions">
+        <button type="button" class="btn" id="try-quote">Quote</button>
+        <button type="button" class="btn" id="try-buy" data-i18n="try_buy">Try to buy it</button>
+      </div>
+      <p class="sig" id="try-sig" hidden></p>
+    </div>
+    <pre class="win reveal" id="try-out" data-title="domains.quote@v1" aria-live="polite"><span class="c" data-i18n="try_empty">// the answer appears here</span></pre>
+  </div>
+</section>
+
+<section class="block" id="rails">
+  <div class="wrap two">
+    <div>
+      <div class="kicker reveal" data-i18n="rails_k">The rails</div>
+      <h2 class="reveal" data-i18n="rails_title">What connecting to the rails gives a domain operator</h2>
+      <div class="grid2" style="margin-top:28px">
+        <div class="card lift reveal"><h3 data-i18n="ra1_h">Found by agents</h3><p data-i18n="ra1_p">Your node announces domains.quote@v1 to an AIMarket hub. After an automated admission check, agents searching the federation for a domain get your quotes.</p></div>
+        <div class="card lift reveal"><h3 data-i18n="ra2_h">Seller-direct payment</h3><p data-i18n="ra2_p">x402 moves USDC from the buyer's wallet to yours. The hub routes the search, never the money, and takes no commission.</p></div>
+        <div class="card lift reveal"><h3 data-i18n="ra3_h">Answers anyone can verify</h3><p data-i18n="ra3_p">Quotes, responses and receipts are signed with your node's Ed25519 key. Buyers pin that key through a catalogue before they spend.</p></div>
+        <div class="card lift reveal"><h3 data-i18n="ra4_h">Private where it matters</h3><p data-i18n="ra4_p">Contacts, payment authorizations and DNS changes go straight to the seller. A hub only ever sees public quotes.</p></div>
+      </div>
+    </div>
+    <div class="diagram reveal" aria-label="How the parts talk">
+      <div class="lane-label" data-i18n="lane_find">Discovery</div>
+      <div class="lane"><div class="node">🤖 <span data-i18n="n_agent">Agent</span><small>market_search</small></div><div class="arrow"></div><div class="node">AIMarket Hub<small>modelmarket.dev</small></div><div class="arrow"></div><div class="node you"><span data-i18n="n_node">Your node</span><small>domains.quote</small></div></div>
+      <div class="lane-label" data-i18n="lane_buy">Purchase</div>
+      <div class="lane"><div class="node">🤖 <span data-i18n="n_agent">Agent</span><small data-i18n="n_owner_x402">owner key · x402</small></div><div class="arrow"></div><div class="node you"><span data-i18n="n_node">Your node</span><small>/register</small></div><div class="arrow"></div><div class="node"><span data-i18n="n_registrar">Registrar</span><small>Openprovider · HTTP</small></div></div>
+      <div class="lane-label" data-i18n="lane_money">Money</div>
+      <div class="lane"><div class="node"><span data-i18n="n_buyer">Buyer's wallet</span><small>USDC · Base</small></div><div class="arrow"></div><div class="node you"><span data-i18n="n_wallet">Your wallet</span><small>PAY_TO</small></div><div class="arrow"></div><div class="node"><span data-i18n="n_registrar">Registrar</span><small data-i18n="n_account">your account</small></div></div>
+      <div class="lane-label" data-i18n="lane_manage">After the sale</div>
+      <div class="lane"><div class="node"><span data-i18n="n_owner">Owner</span><small data-i18n="n_signed">signed requests</small></div><div class="arrow"></div><div class="node you"><span data-i18n="n_node">Your node</span><small>/dns/set · /info</small></div><div class="arrow"></div><div class="node">Vercel<small data-i18n="n_buyer_token">buyer's token</small></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="suppliers">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="sup_k">Suppliers</div>
+    <h2 class="reveal" data-i18n="sup_title">Bring your registrar. Or your own system.</h2>
+    <p class="sub reveal" data-i18n="sup_sub">The seller node does agents, signatures, payments and order recovery. Where the names come from is yours to choose.</p>
+    <div class="grid4">
+      <div class="card lift reveal"><h3>Openprovider</h3><p data-i18n="sup1_p">Built-in adapter: quotes, registration, renewal, DNS and transfer codes.</p><span class="tag ok" data-i18n="sup1_t">sandbox pilot passed</span></div>
+      <div class="card lift reveal"><h3>Porkbun</h3><p data-i18n="sup2_p">Built-in adapter with disposable sandbox credentials and a resumable pilot.</p><span class="tag warn" data-i18n="sup2_t">sandbox only for now</span></div>
+      <div class="card lift reveal"><h3 data-i18n="sup3_h">Your own system</h3><p data-i18n="sup3_p">The HTTP supplier contract — quote, contacts, submit, reconcile, manage — with a runnable simulator. Any language.</p><span class="tag">SUPPLIERS.md</span></div>
+      <div class="card lift reveal"><h3 data-i18n="sup4_h">Registry RDAP</h3><p data-i18n="sup4_p">No account at all: real availability for .com, .net and .org, illustrative prices, no orders. What this demo node runs on.</p><span class="tag ok" data-i18n="sup4_t">live here</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="safe">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="safe_k">Failure first</div>
+    <h2 class="reveal" data-i18n="safe_title">Built for interrupted operations</h2>
+    <p class="sub reveal" data-i18n="safe_sub">Registrars time out, payments land late, processes restart. The kit never submits a registration twice, and a proven non-delivery is refunded to the payer.</p>
+    <div class="grid4">
+      <div class="card lift reveal"><h3 data-i18n="s1_h">Durable order identity</h3><p data-i18n="s1_p">Changed input cannot reuse an existing order. A wallet signature binds the payment to the order and the owner key.</p></div>
+      <div class="card lift reveal"><h3 data-i18n="s2_h">No blind retries</h3><p data-i18n="s2_p">A lost payment or registrar response goes to reconciliation with the original evidence, never to a second submit.</p></div>
+      <div class="card lift reveal"><h3 data-i18n="s3_h">Refunds for proven non-delivery</h3><p data-i18n="s3_p">Refunds go back to the paying wallet from a capped refund wallet. An ambiguous outcome stays pending until it is proven.</p></div>
+      <div class="card lift reveal"><h3 data-i18n="s4_h">Private management</h3><p data-i18n="s4_p">Owner requests and seller answers are Ed25519-signed; stored documents are AES-256-GCM. Registrar autorenew is off.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="status">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="st_k">Honest status</div>
+    <h2 class="reveal" data-i18n="st_title">Where this node and the kit stand</h2>
+    <div class="grid2">
+      <div class="card reveal">
+        <h3 data-i18n="st_node_h">This node, read live from /healthz</h3>
+        <dl class="kv" id="st-kv"><dt data-i18n="st_mode">Mode</dt><dd>…</dd></dl>
+        <p style="margin-top:18px" data-i18n="st_missing_h">It sells live on the first restart after its operator adds:</p>
+        <ul class="list" id="st-missing"></ul>
+      </div>
+      <div class="card reveal">
+        <h3 data-i18n="st_kit_h">The kit, verified so far</h3>
+        <ul class="list">
+          <li data-i18n-html="st_v1"><b>57 local tests</b>, the signed lifecycle demo and the Compose config (2026-10-19).</li>
+          <li data-i18n-html="st_v2"><b>Openprovider and Porkbun sandbox pilots</b>: registration, DNS, renewal, lost-response recovery, owner isolation and MCP reads, rerun with the same orders.</li>
+          <li data-i18n-html="st_v3"><b>Listed on the modelmarket.dev hub</b> as domains.quote@v1 after the automated admission check (2026-10-20).</li>
+        </ul>
+        <p style="margin-top:18px" data-i18n="st_not_h">Not verified yet:</p>
+        <ul class="list">
+          <li data-i18n="st_n1">a production registrar purchase through a seller node;</li>
+          <li data-i18n="st_n2">x402 settlement and refunds for domain orders on mainnet;</li>
+          <li data-i18n="st_n3">attaching a sold domain to Vercel from the seller flow.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="run">
+  <div class="wrap two">
+    <div>
+      <div class="kicker reveal" data-i18n="run_k">Run it</div>
+      <h2 class="reveal" data-i18n="run_title">From an empty server to a public demo seller</h2>
+      <p class="sub reveal" style="margin-bottom:24px" data-i18n="run_sub">Node.js 22.13+ or Docker, and a domain for the node. With DOMAIN_MODE=auto it publishes a demo like this one — real availability, orders refused — and starts selling on the first restart after every live setting is in. /healthz names what is still missing, never the values.</p>
+      <div class="cta reveal">
+        <a class="btn primary" href="https://github.com/alexar76/domain-operator-kit#try-it-locally" data-i18n="run_quick">Quickstart</a>
+        <a class="btn" href="https://github.com/alexar76/domain-operator-kit/blob/main/OPERATIONS.md" data-i18n="run_ops">Operator guide (RU)</a>
+      </div>
+    </div>
+    <pre class="win reveal" data-title="server"><span class="c"># 1. the kit, its tests and the simulated lifecycle</span>
+<span class="p">git</span> clone https://github.com/alexar76/domain-operator-kit.git
+<span class="p">cd</span> domain-operator-kit
+<span class="p">npm</span> ci --ignore-scripts &amp;&amp; <span class="p">npm</span> test &amp;&amp; <span class="p">npm</span> run demo
+
+<span class="c"># 2. a public demo seller: DOMAIN_MODE=auto,</span>
+<span class="c">#    DOMAIN_PUBLIC_URL=https://domains.you.example</span>
+<span class="p">cp</span> .env.example .env &amp;&amp; <span class="p">nano</span> .env
+<span class="p">docker</span> compose up -d --build
+
+<span class="c"># 3. what a buyer's client sees, and what live still needs</span>
+DOMAIN_ALLOW_DEMO=1 <span class="p">node</span> bin/domain-rails.mjs check http://127.0.0.1:9495
+<span class="p">curl</span> -s http://127.0.0.1:9495/healthz
+
+<span class="c"># 4. the federation node's config, to be listed on hubs</span>
+<span class="p">node</span> bin/domain-rails.mjs node-toml https://domains.you.example \
+  https://node.you.example http://127.0.0.1:9495 &gt; node.toml
+
+<span class="c"># 5. this page and the example desk, next to your node:</span>
+<span class="c">#    docs/landing/ is static — serve it at / and /desk/</span></pre>
+  </div>
+</section>
+
+<section class="block" id="docs">
+  <div class="wrap">
+    <div class="kicker reveal" data-i18n="docs_k">Docs</div>
+    <h2 class="reveal" data-i18n="docs_title">Read before you sell</h2>
+    <div class="docs">
+      <div class="card lift reveal"><h3 data-i18n="d1">Start</h3>
+        <a href="https://github.com/alexar76/domain-operator-kit#readme">README (English)</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/README.ru.md">README (Русский)</a>
+        <a href="desk/" data-i18n="d_desk">Example desk</a></div>
+      <div class="card lift reveal"><h3 data-i18n="d2">For agents</h3>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/PROTOCOL.md" data-i18n="d_protocol">Authentication and payment</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/spec/domains-v1.json" data-i18n="d_spec">Capability contract (JSON)</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/examples/mcp.json" data-i18n="d_mcp">MCP client config</a>
+        <a href="listing.json" data-i18n="d_listing">This node's listing.json</a></div>
+      <div class="card lift reveal"><h3 data-i18n="d3">For suppliers</h3>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/SUPPLIERS.md" data-i18n="d_suppliers">Supplier contract and simulator</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/PORKBUN.md" data-i18n="d_porkbun">Porkbun sandbox quickstart</a></div>
+      <div class="card lift reveal"><h3 data-i18n="d4">For operators</h3>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/OPERATIONS.md" data-i18n="d_ops">Operations guide (RU)</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/PILOT.md" data-i18n="d_pilot">Pilot plan</a>
+        <a href="https://github.com/alexar76/domain-operator-kit/blob/main/VALIDATION.md" data-i18n="d_validation">Verification record</a>
+        <a href="https://github.com/alexar76/aicom/blob/main/docs/localization-glossary.md" data-i18n="d_glossary">Glossary (five languages)</a></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap row2">
+    <div><b>Domain Operator Kit</b> · <span data-i18n="foot_part">part of the AIMarket ecosystem</span> · <a href="https://github.com/alexar76/domain-operator-kit/blob/main/LICENSE">MIT</a><br><span data-i18n="foot_demo">This node is a demo: availability is real, prices are illustrative, and it sells nothing.</span></div>
+    <div><a href="https://modelmarket.dev/">modelmarket.dev</a> · <a href="https://esim.modelmarket.dev/" data-i18n="foot_esim">eSIM operator kit</a> · <a href="https://modelmarket.dev/tools/" data-i18n="foot_tools">Free tools</a></div>
+  </div>
+</footer>
+
+<script type="module" src="assets/landing.js"></script>
+</body>
+</html>

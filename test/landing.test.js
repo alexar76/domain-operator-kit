@@ -77,3 +77,12 @@ test('the import map is allowed by its hash in both CSPs, and every module it lo
   }
   for (const [, rel] of readFileSync(join(site, imports.three), 'utf8').matchAll(/from"(\.\/[^"]+)"/g)) assert.ok(existsSync(join(site, dirname(imports.three), rel)), rel);
 });
+
+test('the landing structured data parses and carries no Offer, so Google does not read it as a product', () => {
+  for (const { name, html } of PAGES) {
+    for (const [, block] of html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)) {
+      assert.ok(JSON.parse(block)['@context'], name);
+      assert.ok(!block.includes('"Offer"'), `${name} carries no Offer`);
+    }
+  }
+});

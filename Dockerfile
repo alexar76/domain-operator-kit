@@ -1,4 +1,5 @@
-FROM node:22.22.1-bookworm-slim
+# Node security baseline: 22.23.4 (2026-10-21 security release).
+FROM node:22.23.4-bookworm-slim
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=9495 DOMAIN_DATA_DIR=/app/data
 WORKDIR /app
 COPY package.json package-lock.json ./

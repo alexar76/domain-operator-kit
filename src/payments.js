@@ -38,7 +38,7 @@ export async function cdpPayments({ cdpKeyFile, payTo, refundKeyFile, rpcUrl, ma
   if (!addr.test(payTo)) throw Error('PAY_TO must be a Base wallet address');
   if (!facilitator) {
     const credentials = JSON.parse(readFileSync(cdpKeyFile, 'utf8'));
-    const { createCdpFacilitatorClient } = await import('@coinbase/cdp-sdk/x402');
+    const { createCdpFacilitatorClient } = await import('@aimarket/x402-cdp');
     facilitator = createCdpFacilitatorClient({ apiKeyId: credentials.id, apiKeySecret: credentials.privateKey });
   }
   if (!account) {

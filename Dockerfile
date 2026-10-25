@@ -3,6 +3,7 @@ FROM node:22.23.4-bookworm-slim
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=9495 DOMAIN_DATA_DIR=/app/data
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY vendor ./vendor
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && mkdir /app/data && chown node:node /app/data
 COPY --chown=node:node src ./src
 COPY --chown=node:node bin ./bin

@@ -1,9 +1,5 @@
 <!-- aicom-mirror-notice -->
-> **🔄 Synced from a monorepo — but with a live history.** `domain-kit` mirrors the
-> canonical AI-Factory monorepo. History here is append-only (no force-push).
-> **Pull requests are welcome** — merged PRs are imported back into the monorepo
-> and re-synced here, so your contribution becomes canonical.
-> 💬 **[Issues](https://github.com/alexar76/domain-operator-kit/issues)** · **[Pull requests](https://github.com/alexar76/domain-operator-kit/pulls)** both welcome.
+> 🔄 Synced from the [AI-Factory monorepo](https://github.com/alexar76/aicom) (append-only history). **Pull requests are welcome** — merged PRs are imported back and re-synced here. [Issues](https://github.com/alexar76/domain-operator-kit/issues) · [Pull requests](https://github.com/alexar76/domain-operator-kit/pulls)
 
 <p align="center">
   <img src="assets/hero.svg" alt="Domain Operator Kit — A home for what agents build. Independent suppliers, fixed markup and owner-controlled DNS." width="100%">

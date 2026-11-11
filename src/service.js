@@ -4,6 +4,7 @@ import { validateRecords } from './dns.js';
 export const CAPS = { quote: 'domains.quote@v1', register: 'domains.register@v1', renew: 'domains.renew@v1',
   status: 'domains.order.status@v1', info: 'domains.info@v1', dnsGet: 'domains.dns.get@v1', dnsSet: 'domains.dns.set@v1', transferCode: 'domains.transfer.code@v1' };
 const TERMINAL = new Set(['delivered', 'refunded', 'cancelled']);
+const MAX_REFUND_ATTEMPTS = 3;
 
 export class DomainService {
   constructor({ store, provider, payments, signer, origin, productId = 'domains-operator', sellerName = 'Domain operator',
@@ -225,6 +226,22 @@ export class DomainService {
       this.save(order, 'refund_due', { refund: null });
     });
   }
+  // Finalized chain evidence says the refund authorization can never move money (it expired
+  // unused, or was cancelled): prepare a fresh one. Until 2026-11-11 this dead-ended in
+  // refund_review — nothing ever retried, the buyer was never refunded and the domain lock
+  // was held for good (audit desks-stripe-4). Bounded: after MAX_REFUND_ATTEMPTS the order goes
+  // to refund_review for the operator, budget released.
+  retryExpiredRefund(order, reason) {
+    this.store.transaction(() => {
+      const latest = this.store.get('orders', order.id);
+      if (latest.state !== 'refund_pending') return;
+      const budget = this.store.get('refund-budget', latest.refund.budget_id);
+      if (budget) this.store.put('refund-budget', latest.refund.budget_id, { reserved: (BigInt(budget.reserved) - units(latest.price_usd)).toString() });
+      const attempts = Number(latest.refund_attempts || 0) + 1;
+      if (attempts >= MAX_REFUND_ATTEMPTS) this.save(latest, 'refund_review', { reason: `refund_${reason}`, refund_attempts: attempts, refund: null });
+      else this.save(latest, 'refund_due', { reason: `refund_${reason}_retry`, refund_attempts: attempts, refund: null });
+    });
+  }
   finishRefund(order, transaction) {
     this.store.transaction(() => {
       this.save(order, 'refunded', { refund: { ...order.refund, transaction }, registrant: null }); this.releaseLock(order);
@@ -290,7 +307,10 @@ export class DomainService {
             else if (o.state === 'refund_pending') {
               const result = await this.payments.reconcile(o.refund.proof);
               if (result.status === 'paid') this.finishRefund(o, result.transaction);
-              else if (result.status === 'unpaid') this.save(o, 'refund_review', { reason: 'refund_expired_unused' });
+              else if (result.status === 'unpaid') {
+                this.retryExpiredRefund(o, result.reason || 'expired_unused');
+                await this.refund(this.store.get('orders', o.id));
+              }
               else if (result.nextBlock) this.save(o, o.state, { refund: { ...o.refund, proof: { ...o.refund.proof, nextBlock: result.nextBlock } } });
             }
           } catch { /* A failed read proves nothing. Preserve durable state for the next pass. */ }

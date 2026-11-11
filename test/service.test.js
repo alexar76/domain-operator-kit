@@ -194,3 +194,32 @@ test('a pending registrar order is refunded only after explicit operator evidenc
     assert.equal((await f.service.status({ order_id: result.order_id }, f.owner)).status, 'refunded');
   } finally { f.close(); }
 });
+
+test('a refund whose authorization expired unused is prepared again, not left in review (audit 2026-11-11)', async () => {
+  const f = fixture(); try {
+    f.provider.submit = async () => { throw new SupplierError('refused', { definite: true }); };
+    f.payments.settle = async () => { if (++f.calls.settle > 1) throw Error('lost refund reply'); return { transaction: 'charge' }; };
+    const result = await f.service.order(await f.input(), f.owner, 'register');
+    assert.equal(result.status, 'refund_pending');
+    // Finalized chain evidence: the first refund authorization can never move money.
+    f.payments.reconcile = async () => ({ status: 'unpaid', reason: 'expired_unused' });
+    f.payments.settle = async () => { f.calls.settle++; return { transaction: 'second-refund' }; };
+    await f.service.reconcileAll();
+    const after = await f.service.status({ order_id: result.order_id }, f.owner);
+    assert.equal(after.status, 'refunded'); assert.equal(after.refund_transaction, 'second-refund');
+    assert.equal(f.calls.refund, 2);
+  } finally { f.close(); }
+});
+
+test('refund retries are bounded and then go to the operator with the budget released', async () => {
+  const f = fixture(); try {
+    f.provider.submit = async () => { throw new SupplierError('refused', { definite: true }); };
+    f.payments.settle = async () => { if (++f.calls.settle > 1) throw Error('lost refund reply'); return { transaction: 'charge' }; };
+    const result = await f.service.order(await f.input(), f.owner, 'register');
+    f.payments.reconcile = async () => ({ status: 'unpaid', reason: 'expired_unused' });
+    f.payments.settle = async () => { throw Error('lost refund reply'); };
+    for (let i = 0; i < 6; i++) await f.service.reconcileAll();
+    assert.equal((await f.service.status({ order_id: result.order_id }, f.owner)).status, 'refund_review');
+    for (const b of f.store.all('refund-budget')) assert.equal(b.reserved, '0');
+  } finally { f.close(); }
+});

@@ -3,6 +3,9 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+// GCM tags are 16 bytes. Pinned, so a stored row whose tag was cut short fails instead of passing a 4-byte check.
+const GCM = { authTagLength: 16 };
+
 // All documents (including registrants and payment authorizations) are encrypted at rest.
 // Transactions must remain synchronous: no network operation inside a SQLite transaction.
 export class Store {
@@ -22,13 +25,13 @@ export class Store {
     } catch (error) { this.db.close(); throw error; }
   }
   encode(kind, id, value) {
-    const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', this.key, iv, GCM);
     cipher.setAAD(Buffer.from(`${kind}:${id}`));
     const encrypted = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]);
     return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString('base64');
   }
   decode(kind, id, body) {
-    const bytes = Buffer.from(body, 'base64'), cipher = createDecipheriv('aes-256-gcm', this.key, bytes.subarray(0, 12));
+    const bytes = Buffer.from(body, 'base64'), cipher = createDecipheriv('aes-256-gcm', this.key, bytes.subarray(0, 12), GCM);
     cipher.setAAD(Buffer.from(`${kind}:${id}`)); cipher.setAuthTag(bytes.subarray(12, 28));
     return JSON.parse(Buffer.concat([cipher.update(bytes.subarray(28)), cipher.final()]).toString());
   }
